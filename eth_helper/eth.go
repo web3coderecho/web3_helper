@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/shopspring/decimal"
 	"github.com/web3coderecho/web3_helper/eth_helper/eth_interface"
+	"github.com/web3coderecho/web3_helper/utils"
 )
 
 type EthHelper struct {
@@ -41,7 +42,7 @@ func (e *EthHelper) GetGasPrice() (*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ToWeiWithDecimals(gasPrice, 9), nil
+	return utils.ToWeiWithDecimals(gasPrice, 9), nil
 }
 
 // NewEthClient 初始化并连接到以太坊节点
@@ -85,7 +86,7 @@ func (e *EthHelper) EstimateGas(ctx context.Context, from, to common.Address, da
 		From:  from,
 		To:    &to,
 		Data:  data,
-		Value: ToEther(value),
+		Value: utils.ToEther(value),
 	})
 }
 
@@ -99,7 +100,7 @@ func (e *EthHelper) GetBalance(ctx context.Context, address common.Address) (dec
 	if err != nil {
 		return decimal.Zero, err
 	}
-	return FromEther(balance), nil
+	return utils.FromEther(balance), nil
 }
 
 func (e *EthHelper) GetChainId(ctx context.Context) (*big.Int, error) {
@@ -230,7 +231,7 @@ func (e *EthHelper) Transaction(
 		}
 	}
 	// 3. 将 decimal.Decimal 转换为 *big.Int（Wei）
-	value := ToEther(amount)
+	value := utils.ToEther(amount)
 	// 5. 获取 chainID
 	chainID, err := e.GetChainId(ctx)
 	if err != nil {
@@ -263,8 +264,7 @@ func (e *EthHelper) SendTransaction(ctx context.Context, tx *types.Transaction) 
 	return tx.Hash(), err
 }
 
-func (e *EthHelper) FilterLogs(filterQuery ethereum.FilterQuery) ([]types.Log, error) {
-	ctx := context.Background()
+func (e *EthHelper) FilterLogs(ctx context.Context, filterQuery ethereum.FilterQuery) ([]types.Log, error) {
 	client, err := e.NewEthClient(ctx)
 	if err != nil {
 		return nil, err

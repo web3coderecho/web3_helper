@@ -11,6 +11,7 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/web3coderecho/web3_helper/eth_helper"
 	"github.com/web3coderecho/web3_helper/eth_helper/contract/erc20"
+	"github.com/web3coderecho/web3_helper/utils"
 )
 
 type ERC20 struct {
@@ -28,49 +29,24 @@ func NewErc20(eth eth_helper.EthHelper, address common.Address) *ERC20 {
 	}
 }
 
-func (erc *ERC20) GetErc20Caller(ctx context.Context) (*erc20.Erc20Caller, *ethclient.Client, error) {
+func (erc *ERC20) GetErc20(ctx context.Context) (*erc20.Erc20, *ethclient.Client, error) {
 	client, err := erc.eth.NewEthClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	erc20caller, err := erc20.NewErc20Caller(erc.ContractAddress, client)
+	erc20Contract, err := erc20.NewErc20(erc.ContractAddress, client)
 	if err != nil {
 		client.Close()
 		return nil, nil, err
 	}
-	return erc20caller, client, nil
-}
-func (erc *ERC20) GetErc20Transactor(ctx context.Context) (*erc20.Erc20Transactor, *ethclient.Client, error) {
-	client, err := erc.eth.NewEthClient(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	transactor, err := erc20.NewErc20Transactor(erc.ContractAddress, client)
-	if err != nil {
-		client.Close()
-		return nil, nil, err
-	}
-	return transactor, client, nil
-}
-
-func (erc *ERC20) GetErc20Filterer(ctx context.Context) (*erc20.Erc20Filterer, *ethclient.Client, error) {
-	client, err := erc.eth.NewEthClient(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	filterer, err := erc20.NewErc20Filterer(erc.ContractAddress, client)
-	if err != nil {
-		client.Close()
-		return nil, nil, err
-	}
-	return filterer, client, nil
+	return erc20Contract, client, nil
 }
 
 func (erc *ERC20) GetDecimals(ctx context.Context) (int, error) {
 	if erc.Decimals != 0 {
 		return erc.Decimals, nil
 	}
-	caller, client, err := erc.GetErc20Caller(ctx)
+	caller, client, err := erc.GetErc20(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -84,7 +60,7 @@ func (erc *ERC20) GetDecimals(ctx context.Context) (int, error) {
 }
 
 func (erc *ERC20) BalanceOf(ctx context.Context, address common.Address) (decimal.Decimal, error) {
-	caller, client, err := erc.GetErc20Caller(ctx)
+	caller, client, err := erc.GetErc20(ctx)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -100,14 +76,14 @@ func (erc *ERC20) BalanceOf(ctx context.Context, address common.Address) (decima
 	if err != nil {
 		return decimal.Zero, err
 	}
-	return eth_helper.FromWeiWithDecimals(balance, decimals), err
+	return utils.FromWeiWithDecimals(balance, decimals), err
 }
 
 func (erc *ERC20) GetName(ctx context.Context) (string, error) {
 	if erc.Name != "" {
 		return erc.Name, nil
 	}
-	caller, client, err := erc.GetErc20Caller(ctx)
+	caller, client, err := erc.GetErc20(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -123,7 +99,7 @@ func (erc *ERC20) GetSymbol(ctx context.Context) (string, error) {
 	if erc.Symbol != "" {
 		return erc.Symbol, nil
 	}
-	caller, client, err := erc.GetErc20Caller(ctx)
+	caller, client, err := erc.GetErc20(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -137,7 +113,7 @@ func (erc *ERC20) GetSymbol(ctx context.Context) (string, error) {
 }
 
 func (erc *ERC20) TotalSupply(ctx context.Context) (decimal.Decimal, error) {
-	caller, client, err := erc.GetErc20Caller(ctx)
+	caller, client, err := erc.GetErc20(ctx)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -150,10 +126,10 @@ func (erc *ERC20) TotalSupply(ctx context.Context) (decimal.Decimal, error) {
 	if err != nil {
 		return decimal.Zero, err
 	}
-	return eth_helper.FromWeiWithDecimals(totalSupply, decimals), err
+	return utils.FromWeiWithDecimals(totalSupply, decimals), err
 }
 func (erc *ERC20) Allowance(ctx context.Context, owner, spender common.Address) (decimal.Decimal, error) {
-	caller, client, err := erc.GetErc20Caller(ctx)
+	caller, client, err := erc.GetErc20(ctx)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -166,11 +142,11 @@ func (erc *ERC20) Allowance(ctx context.Context, owner, spender common.Address) 
 	if err != nil {
 		return decimal.Zero, err
 	}
-	return eth_helper.FromWeiWithDecimals(allowance, decimals), err
+	return utils.FromWeiWithDecimals(allowance, decimals), err
 }
 
 func (erc *ERC20) Transfer(ctx context.Context, from, to common.Address, amount decimal.Decimal, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc20Transactor(ctx)
+	transactor, client, err := erc.GetErc20(ctx)
 	defer client.Close()
 	if err != nil {
 		return common.Hash{}, err
@@ -182,7 +158,7 @@ func (erc *ERC20) Transfer(ctx context.Context, from, to common.Address, amount 
 	if balance.LessThan(amount) {
 		return common.Hash{}, fmt.Errorf("erc20 balance is not enough")
 	}
-	transaction, err := transactor.Transfer(nil, to, eth_helper.ToWeiWithDecimals(amount, erc.Decimals))
+	transaction, err := transactor.Transfer(nil, to, utils.ToWeiWithDecimals(amount, erc.Decimals))
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -190,12 +166,12 @@ func (erc *ERC20) Transfer(ctx context.Context, from, to common.Address, amount 
 }
 
 func (erc *ERC20) Approve(ctx context.Context, from, spender common.Address, amount decimal.Decimal, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc20Transactor(ctx)
+	transactor, client, err := erc.GetErc20(ctx)
 	defer client.Close()
 	if err != nil {
 		return common.Hash{}, err
 	}
-	transaction, err := transactor.Approve(nil, spender, eth_helper.ToWeiWithDecimals(amount, erc.Decimals))
+	transaction, err := transactor.Approve(nil, spender, utils.ToWeiWithDecimals(amount, erc.Decimals))
 	if err != nil {
 		return common.Hash{}, err
 	}
@@ -203,7 +179,7 @@ func (erc *ERC20) Approve(ctx context.Context, from, spender common.Address, amo
 }
 
 func (erc *ERC20) ParseTransfer(ctx context.Context, log types.Log) (*erc20.Erc20Transfer, error) {
-	filterer, client, err := erc.GetErc20Filterer(ctx)
+	filterer, client, err := erc.GetErc20(ctx)
 	defer client.Close()
 	if err != nil {
 		return nil, err

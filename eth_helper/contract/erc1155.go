@@ -27,47 +27,21 @@ func NewErc1155(eth eth_helper.EthHelper, address common.Address) *ERC1155 {
 	}
 }
 
-func (erc *ERC1155) GetErc1155Filterer(ctx context.Context) (*erc1155.Erc1155Filterer, *ethclient.Client, error) {
+func (erc *ERC1155) GetErc1155(ctx context.Context) (*erc1155.Erc1155, *ethclient.Client, error) {
 	client, err := erc.eth.NewEthClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	filterer, err := erc1155.NewErc1155Filterer(erc.ContractAddress, client)
+	erc1155Contract, err := erc1155.NewErc1155(erc.ContractAddress, client)
 	if err != nil {
 		client.Close()
 		return nil, nil, err
 	}
-	return filterer, client, nil
-}
-
-func (erc *ERC1155) GetErc1155Caller(ctx context.Context) (*erc1155.Erc1155Caller, *ethclient.Client, error) {
-	client, err := erc.eth.NewEthClient(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	caller, err := erc1155.NewErc1155Caller(erc.ContractAddress, client)
-	if err != nil {
-		client.Close()
-		return nil, nil, err
-	}
-	return caller, client, nil
-}
-
-func (erc *ERC1155) GetErc1155Transactor(ctx context.Context) (*erc1155.Erc1155Transactor, *ethclient.Client, error) {
-	client, err := erc.eth.NewEthClient(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	transactor, err := erc1155.NewErc1155Transactor(erc.ContractAddress, client)
-	if err != nil {
-		client.Close()
-		return nil, nil, err
-	}
-	return transactor, client, nil
+	return erc1155Contract, client, nil
 }
 
 func (erc *ERC1155) BalanceOf(ctx context.Context, account common.Address, id *big.Int) (decimal.Decimal, error) {
-	caller, client, err := erc.GetErc1155Caller(ctx)
+	caller, client, err := erc.GetErc1155(ctx)
 	defer client.Close()
 	if err != nil {
 		return decimal.Zero, err
@@ -80,7 +54,7 @@ func (erc *ERC1155) BalanceOf(ctx context.Context, account common.Address, id *b
 }
 
 func (erc *ERC1155) BalanceOfBatch(ctx context.Context, accounts []common.Address, ids []*big.Int) ([]*big.Int, error) {
-	caller, client, err := erc.GetErc1155Caller(ctx)
+	caller, client, err := erc.GetErc1155(ctx)
 	defer client.Close()
 	if err != nil {
 		return nil, err
@@ -89,7 +63,7 @@ func (erc *ERC1155) BalanceOfBatch(ctx context.Context, accounts []common.Addres
 }
 
 func (erc *ERC1155) IsApprovedForAll(ctx context.Context, account common.Address, operator common.Address) (bool, error) {
-	caller, client, err := erc.GetErc1155Caller(ctx)
+	caller, client, err := erc.GetErc1155(ctx)
 	defer client.Close()
 	if err != nil {
 		return false, err
@@ -98,7 +72,7 @@ func (erc *ERC1155) IsApprovedForAll(ctx context.Context, account common.Address
 }
 
 func (erc *ERC1155) SafeTransferFrom(ctx context.Context, from common.Address, to common.Address, id *big.Int, value *big.Int, data []byte, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc1155Transactor(ctx)
+	transactor, client, err := erc.GetErc1155(ctx)
 	defer client.Close()
 	if err != nil {
 		return common.Hash{}, err
@@ -111,7 +85,7 @@ func (erc *ERC1155) SafeTransferFrom(ctx context.Context, from common.Address, t
 }
 
 func (erc *ERC1155) SafeBatchTransferFrom(ctx context.Context, from common.Address, to common.Address, ids []*big.Int, values []*big.Int, data []byte, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc1155Transactor(ctx)
+	transactor, client, err := erc.GetErc1155(ctx)
 	defer client.Close()
 	if err != nil {
 		return common.Hash{}, err
@@ -124,7 +98,7 @@ func (erc *ERC1155) SafeBatchTransferFrom(ctx context.Context, from common.Addre
 }
 
 func (erc *ERC1155) SetApprovalForAll(ctx context.Context, from, operator common.Address, approved bool, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc1155Transactor(ctx)
+	transactor, client, err := erc.GetErc1155(ctx)
 	defer client.Close()
 	if err != nil {
 		return common.Hash{}, err
@@ -137,7 +111,7 @@ func (erc *ERC1155) SetApprovalForAll(ctx context.Context, from, operator common
 }
 
 func (erc *ERC1155) Uri(ctx context.Context, id *big.Int) (string, error) {
-	caller, client, err := erc.GetErc1155Caller(ctx)
+	caller, client, err := erc.GetErc1155(ctx)
 	defer client.Close()
 	if err != nil {
 		return "", err
@@ -146,7 +120,7 @@ func (erc *ERC1155) Uri(ctx context.Context, id *big.Int) (string, error) {
 }
 
 func (erc *ERC1155) ParseTransferSingle(log types.Log) (*erc1155.Erc1155TransferSingle, error) {
-	filterer, client, err := erc.GetErc1155Filterer(context.Background())
+	filterer, client, err := erc.GetErc1155(context.Background())
 	defer client.Close()
 	if err != nil {
 		return nil, err
@@ -154,7 +128,7 @@ func (erc *ERC1155) ParseTransferSingle(log types.Log) (*erc1155.Erc1155Transfer
 	return filterer.ParseTransferSingle(log)
 }
 func (erc *ERC1155) ParseTransferBatch(log types.Log) (*erc1155.Erc1155TransferBatch, error) {
-	filterer, client, err := erc.GetErc1155Filterer(context.Background())
+	filterer, client, err := erc.GetErc1155(context.Background())
 	defer client.Close()
 	if err != nil {
 		return nil, err

@@ -20,18 +20,21 @@ func TestNewHDWallet(t *testing.T) {
 	} else {
 		fmt.Println("助记词校验通过")
 	}
+	fmt.Println(wallet.GetRootKeyPair())
 
 	res, err := wallet.EncryptMnemonicToKeystore("123456")
 
 	if err != nil {
 		log.Fatalf("加密助记词失败: %v", err)
 	}
-	fmt.Println("加密助记词:", res)
-	wallet, err = DecryptMnemonicFromKeystore(res, "123456")
+	fmt.Println("加密助记词:", string(res))
+	stringRes := string(res)
+	wallet, err = DecryptMnemonicFromKeystore([]byte(stringRes), "123456")
 	if err != nil {
 		log.Fatalf("解密助记词失败: %v", err)
 	}
 	fmt.Println("助记词:", wallet.Mnemonic)
+	fmt.Println(wallet.GetRootKeyPair())
 
 	// 助记词恢复（模拟）
 	recoverWallet, err := RecoverHDWallet(wallet.Mnemonic)

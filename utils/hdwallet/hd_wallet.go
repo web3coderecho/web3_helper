@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tyler-smith/go-bip39"
+	"github.com/web3coderecho/web3_helper/utils"
 )
 
 var MainNetParams = &chaincfg.MainNetParams
@@ -39,6 +40,22 @@ func (w *HDWallet) EncryptMnemonicToKeystore(password string) ([]byte, error) {
 	}
 	// 返回 JSON 序列化后的字节数组
 	return json.Marshal(cryptoJson)
+}
+
+// GetRootKeyPair 获取根地址和根私钥
+func (w *HDWallet) GetRootKeyPair() (*ETHAddressInfo, error) {
+	// 获取根私钥
+	privateKey, err := w.Master.ECPrivKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get root private key: %v", err)
+	}
+	ecdsaPrivateKey := privateKey.ToECDSA()
+	// 生成对应的以太坊地址
+	ethAddr := crypto.PubkeyToAddress(ecdsaPrivateKey.PublicKey)
+	return &ETHAddressInfo{
+		Address:    ethAddr,
+		PrivateKey: ecdsaPrivateKey,
+	}, nil
 }
 
 func DecryptMnemonicFromKeystore(keystoreJSON []byte, password string) (*HDWallet, error) {
@@ -167,6 +184,10 @@ func (info *ETHAddressInfo) ExportETHKeystore(password string) ([]byte, error) {
 type ETHAddressInfo struct {
 	Address    common.Address
 	PrivateKey *ecdsa.PrivateKey
+}
+
+func (info *ETHAddressInfo) ToTronAddress() string {
+	return utils.EthToTron(info.Address)
 }
 
 // EncryptPrivateKey 使用指定密码加密私钥，返回 keystore JSON 数据
