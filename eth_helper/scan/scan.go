@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"context"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -23,9 +24,9 @@ func NewScanFilterQuery(address []common.Address, topics [][]common.Hash, eth *e
 	}
 }
 
-func (s *Scan) Scan(from, to uint64, blockHash string) ([]types.Log, error) {
+func (s *Scan) Scan(ctx context.Context, from, to uint64, blockHash string) ([]types.Log, error) {
 	filterQuery := s.GetEthFilterQuery(from, to, blockHash)
-	return s.ethHelper.FilterLogs(filterQuery)
+	return s.ethHelper.FilterLogs(ctx, filterQuery)
 }
 
 func (s *Scan) GetEthFilterQuery(from, to uint64, blockHash string) ethereum.FilterQuery {

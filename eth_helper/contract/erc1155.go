@@ -20,10 +20,10 @@ type ERC1155 struct {
 	eth             *eth_helper.EthHelper
 }
 
-func NewErc1155(eth eth_helper.EthHelper, address common.Address) *ERC1155 {
+func NewErc1155(eth *eth_helper.EthHelper, address common.Address) *ERC1155 {
 	return &ERC1155{
 		ContractAddress: address,
-		eth:             &eth,
+		eth:             eth,
 	}
 }
 

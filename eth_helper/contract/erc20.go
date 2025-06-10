@@ -22,10 +22,10 @@ type ERC20 struct {
 	eth             *eth_helper.EthHelper
 }
 
-func NewErc20(eth eth_helper.EthHelper, address common.Address) *ERC20 {
+func NewErc20(eth *eth_helper.EthHelper, address common.Address) *ERC20 {
 	return &ERC20{
 		ContractAddress: address,
-		eth:             &eth,
+		eth:             eth,
 	}
 }
 

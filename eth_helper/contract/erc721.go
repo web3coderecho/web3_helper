@@ -20,10 +20,10 @@ type ERC721 struct {
 	eth             *eth_helper.EthHelper
 }
 
-func NewErc721(eth eth_helper.EthHelper, address common.Address) *ERC721 {
+func NewErc721(eth *eth_helper.EthHelper, address common.Address) *ERC721 {
 	return &ERC721{
 		ContractAddress: address,
-		eth:             &eth,
+		eth:             eth,
 	}
 }
 
