@@ -146,11 +146,6 @@ func (erc *ERC20) Allowance(ctx context.Context, owner, spender common.Address) 
 }
 
 func (erc *ERC20) Transfer(ctx context.Context, from, to common.Address, amount decimal.Decimal, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc20(ctx)
-	defer client.Close()
-	if err != nil {
-		return common.Hash{}, err
-	}
 	balance, err := erc.BalanceOf(ctx, from)
 	if err != nil {
 		return common.Hash{}, err
@@ -158,24 +153,21 @@ func (erc *ERC20) Transfer(ctx context.Context, from, to common.Address, amount 
 	if balance.LessThan(amount) {
 		return common.Hash{}, fmt.Errorf("erc20 balance is not enough")
 	}
-	transaction, err := transactor.Transfer(nil, to, utils.ToWeiWithDecimals(amount, erc.Decimals))
+	abi, _ := erc20.Erc20MetaData.GetAbi()
+	data, err := abi.Pack("transfer", to, utils.ToWeiWithDecimals(amount, erc.Decimals))
 	if err != nil {
 		return common.Hash{}, err
 	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, transaction.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC20) Approve(ctx context.Context, from, spender common.Address, amount decimal.Decimal, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc20(ctx)
-	defer client.Close()
+	abi, _ := erc20.Erc20MetaData.GetAbi()
+	data, err := abi.Pack("approve", spender, utils.ToWeiWithDecimals(amount, erc.Decimals))
 	if err != nil {
 		return common.Hash{}, err
 	}
-	transaction, err := transactor.Approve(nil, spender, utils.ToWeiWithDecimals(amount, erc.Decimals))
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, transaction.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC20) ParseTransfer(ctx context.Context, log types.Log) (*erc20.Erc20Transfer, error) {

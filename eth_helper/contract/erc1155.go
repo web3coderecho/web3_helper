@@ -72,42 +72,30 @@ func (erc *ERC1155) IsApprovedForAll(ctx context.Context, account common.Address
 }
 
 func (erc *ERC1155) SafeTransferFrom(ctx context.Context, from common.Address, to common.Address, id *big.Int, value *big.Int, data []byte, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc1155(ctx)
-	defer client.Close()
+	abi, _ := erc1155.Erc1155MetaData.GetAbi()
+	data, err := abi.Pack("safeTransferFrom", to, id, value)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	tx, err := transactor.SafeTransferFrom(nil, from, to, id, value, data)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, tx.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC1155) SafeBatchTransferFrom(ctx context.Context, from common.Address, to common.Address, ids []*big.Int, values []*big.Int, data []byte, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc1155(ctx)
-	defer client.Close()
+	abi, _ := erc1155.Erc1155MetaData.GetAbi()
+	data, err := abi.Pack("safeBatchTransferFrom", to, ids, values)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	tx, err := transactor.SafeBatchTransferFrom(nil, from, to, ids, values, data)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, tx.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC1155) SetApprovalForAll(ctx context.Context, from, operator common.Address, approved bool, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc1155(ctx)
-	defer client.Close()
+	abi, _ := erc1155.Erc1155MetaData.GetAbi()
+	data, err := abi.Pack("setApprovalForAll", operator, approved)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	tx, err := transactor.SetApprovalForAll(nil, operator, approved)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, tx.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC1155) Uri(ctx context.Context, id *big.Int) (string, error) {

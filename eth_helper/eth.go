@@ -206,28 +206,25 @@ func (e *EthHelper) Transaction(
 	nonce uint64,
 	data []byte,
 ) (common.Hash, error) {
-	client, err := e.NewEthClient(ctx)
+	limit, price, _, err := e.Check(ctx, from, to, data, amount)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	defer client.Close()
+	if gasPrice == nil {
+		gasPrice = price
+	}
+	if gasLimit <= limit {
+		gasLimit = limit
+	}
 	if nonce == 0 {
+		client, err := e.NewEthClient(ctx)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		defer client.Close()
 		nonce, err = client.PendingNonceAt(ctx, from)
 		if err != nil {
 			return common.Hash{}, fmt.Errorf("failed to get nonce: %v", err)
-		}
-	}
-	if gasLimit == 0 {
-		gasLimit, err = e.EstimateGas(ctx, from, to, data, amount)
-		if err != nil {
-			return common.Hash{}, err
-		}
-	}
-	// 2. 获取 gas price（如果未传入）
-	if gasPrice == nil {
-		gasPrice, err = e.GetGasPrice()
-		if err != nil {
-			return common.Hash{}, err
 		}
 	}
 	// 3. 将 decimal.Decimal 转换为 *big.Int（Wei）
@@ -252,6 +249,23 @@ func (e *EthHelper) Transaction(
 		return common.Hash{}, fmt.Errorf("failed to sign transaction: %v", err)
 	}
 	return e.SendTransaction(ctx, signedTx)
+}
+
+func (e *EthHelper) Check(ctx context.Context, from, to common.Address, data []byte, amount decimal.Decimal) (gasLimit uint64, gasPrice *big.Int, gas decimal.Decimal, err error) {
+	gasLimit, err = e.EstimateGas(ctx, from, to, data, amount)
+	if err != nil {
+		return 0, nil, decimal.Zero, fmt.Errorf("failed to estimate gas: %v", err)
+	}
+	gasPrice, err = e.GetGasPrice()
+	gasFee := big.NewInt(0)
+	gasFee.Mul(gasPrice, big.NewInt(int64(gasLimit)))
+	fromBalance, err := e.GetBalance(ctx, from)
+	gas = utils.FromEther(gasFee).Add(amount)
+	if gas.Cmp(fromBalance) >= 0 {
+		gas.Sub(fromBalance)
+		err = fmt.Errorf("insufficient balance")
+	}
+	return gasLimit, gasPrice, gas, err
 }
 
 func (e *EthHelper) SendTransaction(ctx context.Context, tx *types.Transaction) (common.Hash, error) {

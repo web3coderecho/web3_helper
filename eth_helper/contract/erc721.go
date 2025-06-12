@@ -97,42 +97,30 @@ func (erc *ERC721) BalanceOf(ctx context.Context, owner common.Address) (int64, 
 }
 
 func (erc *ERC721) Approve(ctx context.Context, from common.Address, to common.Address, tokenId *big.Int, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc721(ctx)
-	defer client.Close()
+	abi, _ := erc721.Erc721MetaData.GetAbi()
+	data, err := abi.Pack("approve", to, tokenId)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	tx, err := transactor.Approve(nil, to, tokenId)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, tx.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC721) SafeTransferFrom(ctx context.Context, from common.Address, to common.Address, tokenId *big.Int, data []byte, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc721(ctx)
-	defer client.Close()
+	abi, _ := erc721.Erc721MetaData.GetAbi()
+	data, err := abi.Pack("safeTransferFrom", from, to, tokenId, "")
 	if err != nil {
 		return common.Hash{}, err
 	}
-	tx, err := transactor.SafeTransferFrom(nil, from, to, tokenId)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, tx.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC721) SetApprovalForAll(ctx context.Context, from common.Address, operator common.Address, approved bool, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc721(ctx)
-	defer client.Close()
+	abi, _ := erc721.Erc721MetaData.GetAbi()
+	data, err := abi.Pack("setApprovalForAll", operator, approved)
 	if err != nil {
 		return common.Hash{}, err
 	}
-	tx, err := transactor.SetApprovalForAll(nil, operator, approved)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, tx.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC721) IsApprovedForAll(ctx context.Context, owner common.Address, operator common.Address) (bool, error) {
@@ -145,16 +133,12 @@ func (erc *ERC721) IsApprovedForAll(ctx context.Context, owner common.Address, o
 }
 
 func (erc *ERC721) TransferFrom(ctx context.Context, from common.Address, to common.Address, tokenId *big.Int, privateKey *ecdsa.PrivateKey) (common.Hash, error) {
-	transactor, client, err := erc.GetErc721(ctx)
-	defer client.Close()
+	abi, _ := erc721.Erc721MetaData.GetAbi()
+	data, err := abi.Pack("transferFrom", from, to, tokenId, "")
 	if err != nil {
 		return common.Hash{}, err
 	}
-	tx, err := transactor.TransferFrom(nil, from, to, tokenId)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, tx.Data())
+	return erc.eth.Transaction(ctx, from, privateKey, erc.ContractAddress, decimal.Zero, 0, common.Big0, 0, data)
 }
 
 func (erc *ERC721) ParseTransfer(ctx context.Context, log types.Log) (*erc721.Erc721Transfer, error) {
