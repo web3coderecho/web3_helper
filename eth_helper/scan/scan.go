@@ -30,15 +30,19 @@ func (s *Scan) Scan(ctx context.Context, from, to uint64, blockHash string) ([]t
 }
 
 func (s *Scan) GetEthFilterQuery(from, to uint64, blockHash string) ethereum.FilterQuery {
-	bHash := common.HexToHash(blockHash)
 	if blockHash == "" {
-		bHash = common.Hash{}
-	}
-	return ethereum.FilterQuery{
-		BlockHash: &bHash,
-		FromBlock: big.NewInt(int64(from)),
-		ToBlock:   big.NewInt(int64(to)),
-		Addresses: s.Address,
-		Topics:    s.Topics,
+		return ethereum.FilterQuery{
+			FromBlock: big.NewInt(int64(from)),
+			ToBlock:   big.NewInt(int64(to)),
+			Addresses: s.Address,
+			Topics:    s.Topics,
+		}
+	} else {
+		bHash := common.HexToHash(blockHash)
+		return ethereum.FilterQuery{
+			BlockHash: &bHash,
+			Addresses: s.Address,
+			Topics:    s.Topics,
+		}
 	}
 }
