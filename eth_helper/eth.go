@@ -34,9 +34,9 @@ func (e *EthHelper) SetGasPrice(gasPrice eth_interface.GasPriceInterface) {
 	e.gasPrice = gasPrice
 }
 
-func (e *EthHelper) GetGasPrice() (*big.Int, error) {
+func (e *EthHelper) GetGasPrice(ctx context.Context) (*big.Int, error) {
 	if e.gasPrice == nil {
-		return nil, fmt.Errorf("gas price interface is nil")
+		return e.FeeHistory(ctx, 20, []float64{25, 75})
 	}
 	gasPrice, err := e.gasPrice.GetGasPrice()
 	if err != nil {
@@ -256,7 +256,7 @@ func (e *EthHelper) Check(ctx context.Context, from, to common.Address, data []b
 	if err != nil {
 		return 0, nil, decimal.Zero, fmt.Errorf("failed to estimate gas: %v", err)
 	}
-	gasPrice, err = e.GetGasPrice()
+	gasPrice, err = e.GetGasPrice(ctx)
 	gasFee := big.NewInt(0)
 	gasFee.Mul(gasPrice, big.NewInt(int64(gasLimit)))
 	fromBalance, err := e.GetBalance(ctx, from)
@@ -285,4 +285,34 @@ func (e *EthHelper) FilterLogs(ctx context.Context, filterQuery ethereum.FilterQ
 	}
 	defer client.Close()
 	return client.FilterLogs(ctx, filterQuery)
+}
+
+func (e *EthHelper) FeeHistory(ctx context.Context, blockCount uint64, rewardPercentiles []float64) (*big.Int, error) {
+	client, err := e.NewEthClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+	res, err := client.FeeHistory(ctx, blockCount, nil, rewardPercentiles)
+	if err != nil {
+		return nil, err
+	}
+	maxPriorityFee := e.estimateGasPrice(res)
+	return maxPriorityFee, nil
+}
+
+func (e *EthHelper) estimateGasPrice(feeHistory *ethereum.FeeHistory) (maxPriorityFee *big.Int) {
+	if len(feeHistory.Reward) == 0 {
+		return maxPriorityFee
+	}
+	var totalTips big.Int
+	for _, rewards := range feeHistory.Reward {
+		if len(rewards) > 1 {
+			totalTips.Add(&totalTips, rewards[1]) // 使用 75% 百分位 tip
+		}
+	}
+	count := big.NewInt(int64(len(feeHistory.Reward)))
+	avgTip := new(big.Int).Div(&totalTips, count)
+	// 构造 gas 参数
+	return new(big.Int).Set(avgTip)
 }
