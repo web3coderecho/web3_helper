@@ -211,7 +211,7 @@ func (e *EthHelper) Transaction(
 	if err != nil {
 		return common.Hash{}, err
 	}
-	if gasPrice.Cmp(big.NewInt(0)) == 0 {
+	if gasPrice.Cmp(big.NewInt(0)) <= 0 || gasPrice.Sign() == 0 {
 		gasPrice = price
 	}
 	if gasLimit <= limit {
