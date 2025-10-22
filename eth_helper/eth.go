@@ -211,8 +211,11 @@ func (e *EthHelper) Transaction(
 	if err != nil {
 		return common.Hash{}, err
 	}
+	newGasPrice := big.NewInt(0)
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 || gasPrice.Sign() == 0 {
-		gasPrice = price
+		newGasPrice = price
+	}else{
+		newPrice = gasPrice
 	}
 	if gasLimit <= limit {
 		gasLimit = limit
@@ -241,7 +244,7 @@ func (e *EthHelper) Transaction(
 		To:       &to,
 		Value:    value,
 		Gas:      gasLimit,
-		GasPrice: gasPrice,
+		GasPrice: newGasPrice,
 		Data:     data,
 	})
 	// 6. 使用私钥签名交易
