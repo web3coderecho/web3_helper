@@ -110,7 +110,7 @@ func (e *EthHelper) GetChainId(ctx context.Context) (*big.Int, error) {
 		return e.chainId, err
 	}
 	defer client.Close()
-	if e.chainId.Cmp(big.NewInt(0)) <= 0 {
+	if e.chainId == nil || e.chainId.Cmp(big.NewInt(0)) <= 0 {
 		chainId, err := client.ChainID(ctx)
 		if err != nil {
 			return e.chainId, err
