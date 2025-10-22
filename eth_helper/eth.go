@@ -215,7 +215,7 @@ func (e *EthHelper) Transaction(
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 || gasPrice.Sign() == 0 {
 		newGasPrice = price
 	}else{
-		newPrice = gasPrice
+		newGasPrice = gasPrice
 	}
 	if gasLimit <= limit {
 		gasLimit = limit
