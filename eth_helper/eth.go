@@ -27,6 +27,7 @@ type EthHelper struct {
 func NewEthHelper(rpcURL string) *EthHelper {
 	return &EthHelper{
 		rpcURL: rpcURL,
+		chainId: big.NewInt(0),
 	}
 }
 
